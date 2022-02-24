@@ -108,17 +108,25 @@ def train(args):
 
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
         print(f"epoch-{epoch}, time-{datetime.now()-start_time}, loss-{totalloss/len(batches)}")# replace batch_num with len(bathces)
+        if epoch % 30 == 0:
+            test(args, epoch)
 
-def cal_acc(predict, lable):
-    match = 0
-    for i, p in enumerate(predict):
-        if p == lable[i]:
-            match += 1
+class AccMetric:
+    def __init__(self):
+        self.match = 0
+        self.total_n = 0
 
-    return match / len(predict)
+    def update(self, predict, lable):
+        for i, p in enumerate(predict):
+            if p == lable[i]:
+                self.match += 1
+        self.total_n += len(predict)
 
+    def show(self):
+        return self.match / self.total_n
 
-def test(args):
+def test(args, epoch):
+    AM = AccMetric()
     TP = TitanicPredictor(args).to(args.device)
     dataset = divide()
     test_data = dataset['test']['data']
@@ -127,13 +135,14 @@ def test(args):
     for start, end in batches:
         input = test_data[start:end]
         lable = test_lable[start:end]
-        output = TP(input)
+        with torch.no_grad():
+            output = TP(input)
 
 #        print(input)
-        print('###')
-        print(lable)
-        print('###')
-        print(output[:,0])
+#         print('###')
+#         print(lable)
+#         print('###')
+#         print(output[:,0])
 
         predict = []
         for prob in list(output[:, 0]):
@@ -142,14 +151,18 @@ def test(args):
             else:
                 predict.append(0)
 
-        print(predict)
-        acc = cal_acc(predict, lable)
-        print(acc)
+        AM.update(predict, lable)
+        # print(predict)
+        # acc = AM.show()
+        # print(acc)
+
+    print(f"epoch-{epoch}, acc-{AM.show()}")
+
  #       print(start,end)
 #这还没搞定
 
 
 
 if __name__ == "__main__":
-    # train(args)
-    test(args)
+    train(args)
+    # test(args)
