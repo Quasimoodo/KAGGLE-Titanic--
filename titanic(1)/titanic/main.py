@@ -113,14 +113,34 @@ def train(args):
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
 
         losses.append(totalloss.item() / len(batches))
-        if epoch % 30 == 0:
+        if epoch % 500 == 0:
             print(f"epoch-{epoch}, time-{datetime.now() - start_time}, "
                   f"loss-{totalloss / len(batches)}")  # replace batch_num with len(bathces)
             test(args, epoch)
+        if epoch % 5000 == 0 and epoch>0 :
+            now=datetime.now()
+            torch.save(
+                {
+                    'epoch': epoch,
+                    'model_state_dict': TP.state_dict(),
+                    'optimizer_state_dict': optim.state_dict(),
+                    'loss': loss,
+                }
+                ,'./checkpoint/cp-epoch-'+str(epoch)++'-time-'+str(now)+ '.pth.tar'
+            )
+            print("model saved to './checkpoint/cp-epoch-'"+str(epoch)+'-time-'+str(now)+ '.pth.tar')
 
     epoches = [i for i in range(args.epochs)]
     plt.plot(epoches, losses)
     plt.show()
+
+def load_checkpoint(model, checkpoint_PATH, optimizer):
+    #if checkpoint != None:
+        model_CKPT = torch.load(checkpoint_PATH)
+        model.load_state_dict(model_CKPT['state_dict'])
+        print('loading checkpoint!')
+        optimizer.load_state_dict(model_CKPT['optimizer'])
+        return model, optimizer
 
 class AccMetric:
     def __init__(self):
