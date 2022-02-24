@@ -22,10 +22,10 @@ class TitanicPredictor(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_nodes),
             nn.Sigmoid(),
-            nn.Linear(self.hidden_nodes, self.hidden_nodes),
-            nn.Sigmoid(),
-            nn.Linear(self.hidden_nodes, 2),
-            nn.Softmax(dim=1)
+            # nn.Linear(self.hidden_nodes, self.hidden_nodes),
+            # nn.Sigmoid(),
+            nn.Linear(self.hidden_nodes, 1),
+            nn.Sigmoid()
         )
 
         self.batch_size = args.batch_size
@@ -47,7 +47,7 @@ class TitanicPredictor(nn.Module):
         input = self.get_new_batch(batch)
 
         output = self.net(input)
-        return output
+        return output.squeeze()
 
 def make_batches(data):
     pass_num = data.shape[0]
@@ -73,15 +73,16 @@ def divide():
     test_data=data_temp[1]
 
     lable_temp=torch.split(lable,[lable.shape[0]-test_num,test_num],dim=0)
-    train_lable=lable_temp[0]
-    test_lable=lable_temp[1]
+    train_lable=lable_temp[0].float()
+    test_lable=lable_temp[1].float()
 
     dataset={'train':{'data':train_data,'lable':train_lable,'batches':make_batches(train_data)},
              'test':{'data':test_data,'lable':test_lable,'batches':make_batches(test_data)}}
     return dataset
+
 def train(args):
     TP = TitanicPredictor(args).to(args.device)
-    loss_func = nn.CrossEntropyLoss().to(args.device)
+    loss_func = nn.BCELoss().to(args.device)
     optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
     dataset=divide()
     train_data=dataset['train']['data']
@@ -138,30 +139,16 @@ def test(args, epoch):
         with torch.no_grad():
             output = TP(input)
 
-#        print(input)
-#         print('###')
-#         print(lable)
-#         print('###')
-#         print(output[:,0])
-
         predict = []
-        for prob in list(output[:, 0]):
+        for prob in list(output):
             if prob >= 0.5:
                 predict.append(1)
             else:
                 predict.append(0)
 
         AM.update(predict, lable)
-        # print(predict)
-        # acc = AM.show()
-        # print(acc)
 
     print(f"epoch-{epoch}, acc-{AM.show()}")
-
- #       print(start,end)
-#这还没搞定
-
-
 
 if __name__ == "__main__":
     train(args)
