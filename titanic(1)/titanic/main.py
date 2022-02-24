@@ -109,6 +109,15 @@ def train(args):
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
         print(f"epoch-{epoch}, time-{datetime.now()-start_time}, loss-{totalloss/len(batches)}")# replace batch_num with len(bathces)
 
+def cal_acc(predict, lable):
+    match = 0
+    for i, p in enumerate(predict):
+        if p == lable[i]:
+            match += 1
+
+    return match / len(predict)
+
+
 def test(args):
     TP = TitanicPredictor(args).to(args.device)
     dataset = divide()
@@ -125,10 +134,22 @@ def test(args):
         print(lable)
         print('###')
         print(output[:,0])
+
+        predict = []
+        for prob in list(output[:, 0]):
+            if prob >= 0.5:
+                predict.append(1)
+            else:
+                predict.append(0)
+
+        print(predict)
+        acc = cal_acc(predict, lable)
+        print(acc)
  #       print(start,end)
 #这还没搞定
 
 
 
 if __name__ == "__main__":
-    train(args)
+    # train(args)
+    test(args)

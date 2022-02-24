@@ -2,6 +2,7 @@
 
 import math
 from math import sqrt, pi
+import torch
 
 
 if __name__ == "__main__":
@@ -10,7 +11,7 @@ if __name__ == "__main__":
 
     # my_love = '123'
     word = 45
-    b = sqrt()
+    # b = sqrt()
     print(type(word))
 
     # word = str(word)
