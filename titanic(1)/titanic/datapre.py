@@ -10,6 +10,8 @@ def z_score(x):
     x = (x - min) / (max - min)
     return x
 
+#drop out the row that have the null value
+#return the data and label as tensor
 
 def read_data(path):
     titanic_data = pd.read_csv(path)

@@ -49,22 +49,44 @@ class TitanicPredictor(nn.Module):
         output = self.net(input)
         return output
 
-def train(args):
-    TP = TitanicPredictor(args).to(args.device)
-    loss_func = nn.CrossEntropyLoss().to(args.device)
-    optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
-
-    train_data, train_lable = read_data('./data/train.csv')
-    pass_num = train_data.shape[0]
+def make_batches(data):
+    pass_num = data.shape[0]
     batch_num = int(pass_num / args.batch_size) + 1
     batches = []
 
-    for i in range(batch_num-1):
+    for i in range(batch_num - 1):
         start = i * args.batch_size
         end = (i + 1) * args.batch_size
         if end > pass_num:
             end = pass_num
         batches.append((start, end))
+    return batches
+
+#from read_data to dataset
+#return a dataset including train and test and batches
+def divide():
+    data, lable = read_data('./data/train.csv')
+    test_num=72 #approximately 10%
+
+    data_temp=torch.split(data,[data.shape[0]-test_num,test_num],dim=0)
+    train_data=data_temp[0]
+    test_data=data_temp[1]
+
+    lable_temp=torch.split(lable,[lable.shape[0]-test_num,test_num],dim=0)
+    train_lable=lable_temp[0]
+    test_lable=lable_temp[1]
+
+    dataset={'train':{'data':train_data,'lable':train_lable,'batches':make_batches(train_data)},
+             'test':{'data':test_data,'lable':test_lable,'batches':make_batches(test_data)}}
+    return dataset
+def train(args):
+    TP = TitanicPredictor(args).to(args.device)
+    loss_func = nn.CrossEntropyLoss().to(args.device)
+    optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
+    dataset=divide()
+    train_data=dataset['train']['data']
+    train_lable=dataset['train']['lable']
+    batches=dataset['train']['batches']
 
     TP.train()
     losses = []
@@ -85,9 +107,26 @@ def train(args):
             optim.step()
 
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
-        print(f"epoch-{epoch}, time-{datetime.now()-start_time}, loss-{totalloss/batch_num}")
+        print(f"epoch-{epoch}, time-{datetime.now()-start_time}, loss-{totalloss/len(batches)}")# replace batch_num with len(bathces)
 
+def test(args):
+    TP = TitanicPredictor(args).to(args.device)
+    dataset = divide()
+    test_data = dataset['test']['data']
+    test_lable = dataset['test']['lable']
+    batches = dataset['test']['batches']
+    for start, end in batches:
+        input = test_data[start:end]
+        lable = test_lable[start:end]
+        output = TP(input)
 
+#        print(input)
+        print('###')
+        print(lable)
+        print('###')
+        print(output[:,0])
+ #       print(start,end)
+#这还没搞定
 
 
 
