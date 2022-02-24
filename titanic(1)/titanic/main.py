@@ -4,6 +4,7 @@ from datapre import *
 from config import *
 import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 class TitanicPredictor(nn.Module):
     def __init__(self, args):
@@ -44,7 +45,7 @@ class TitanicPredictor(nn.Module):
 
     def forward(self, batch):
         #batch: (B, 7)
-        input = self.get_new_batch(batch)
+        input = self.get_new_batch(batch.to(args.device))
 
         output = self.net(input)
         return output.squeeze()
@@ -54,7 +55,7 @@ def make_batches(data):
     batch_num = int(pass_num / args.batch_size) + 1
     batches = []
 
-    for i in range(batch_num - 1):
+    for i in range(batch_num):
         start = i * args.batch_size
         end = (i + 1) * args.batch_size
         if end > pass_num:
@@ -81,6 +82,8 @@ def divide():
     return dataset
 
 def train(args):
+    losses = []
+
     TP = TitanicPredictor(args).to(args.device)
     loss_func = nn.BCELoss().to(args.device)
     optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
@@ -99,8 +102,8 @@ def train(args):
             lable = train_lable[start:end]
             output = TP(input)
 
-            loss = loss_func(output, lable)
-            losses.append(loss)
+            loss = loss_func(output, lable.to(args.device))
+            # losses.append(loss.item())
             totalloss += loss
 
             optim.zero_grad()
@@ -108,9 +111,16 @@ def train(args):
             optim.step()
 
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
-        print(f"epoch-{epoch}, time-{datetime.now()-start_time}, loss-{totalloss/len(batches)}")# replace batch_num with len(bathces)
+
+        losses.append(totalloss.item() / len(batches))
         if epoch % 30 == 0:
+            print(f"epoch-{epoch}, time-{datetime.now() - start_time}, "
+                  f"loss-{totalloss / len(batches)}")  # replace batch_num with len(bathces)
             test(args, epoch)
+
+    epoches = [i for i in range(args.epochs)]
+    plt.plot(epoches, losses)
+    plt.show()
 
 class AccMetric:
     def __init__(self):
