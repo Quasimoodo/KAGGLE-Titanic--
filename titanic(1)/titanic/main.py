@@ -15,7 +15,7 @@ class TitanicPredictor(nn.Module):
         self.PclassEmbed = nn.Embedding(4, args.emb_size)
         self.SexEmbed = nn.Embedding(2, args.emb_size)
         self.SibSpEmbed = nn.Embedding(9, args.emb_size)
-        self.ParchEmbed = nn.Embedding(7, args.emb_size)
+        self.ParchEmbed = nn.Embedding(10, args.emb_size)
         self.EmbarkEmbed = nn.Embedding(3, args.emb_size)
 
         self.input_size = 2 + 5 * args.emb_size
@@ -65,9 +65,9 @@ def make_batches(data):
 
 #from read_data to dataset
 #return a dataset including train and test and batches
-def divide():
+def divide(test_num=72):
     data, lable = read_data('./data/train.csv')
-    test_num=72 #approximately 10%
+    test_num=test_num #approximately 10%
 
     data_temp=torch.split(data,[data.shape[0]-test_num,test_num],dim=0)
     train_data=data_temp[0]
@@ -113,24 +113,45 @@ def train(args):
             # print(f"epoch-{epoch}, iter-{end}, loss-{loss}")
 
         losses.append(totalloss.item() / len(batches))
-        if epoch % 30 == 0:
+        if epoch % 500 == 0:
             print(f"epoch-{epoch}, time-{datetime.now() - start_time}, "
                   f"loss-{totalloss / len(batches)}")  # replace batch_num with len(bathces)
             test(args, epoch)
+        if epoch % 5000 == 0 and epoch > 0:
+            now = datetime.now()
+            torch.save(
+                {
+                    'epoch': epoch,
+                    'model_state_dict': TP.state_dict(),
+                    'optimizer_state_dict': optim.state_dict(),
+                    'loss': loss,
+                }, './checkpoint/cp-epoch-' + str(epoch) + '-time-' + str(now) + '.pth.tar'
+            )
+            print("model saved to './checkpoint/cp-epoch-'" + str(epoch) + '-time-' + str(now) + '.pth.tar')
 
     epoches = [i for i in range(args.epochs)]
     plt.plot(epoches, losses)
     plt.show()
 
+def load_checkpoint(model, checkpoint_PATH):
+    #if checkpoint != None:
+        model_CKPT = torch.load(checkpoint_PATH)
+        model.load_state_dict(model_CKPT['model_state_dict'])
+        print('loading checkpoint!')
+        # optimizer.load_state_dict(model_CKPT['optimizer'])
+        return model
+
 class AccMetric:
     def __init__(self):
         self.match = 0
         self.total_n = 0
+        self.wrong = 0
 
     def update(self, predict, lable):
         for i, p in enumerate(predict):
             if p == lable[i]:
                 self.match += 1
+            self.wrong += abs(p - lable[i])
         self.total_n += len(predict)
 
     def show(self):
