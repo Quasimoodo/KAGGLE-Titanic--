@@ -86,8 +86,9 @@ def train(args):
 
     TP = TitanicPredictor(args).to(args.device)
     loss_func = nn.BCELoss().to(args.device)
-    optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
-    dataset=divide()
+    # optim = torch.optim.SGD(TP.parameters(),lr=args.lr)
+    optim = torch.optim.Adam(TP.parameters(), lr=args.lr)
+    dataset=divide(0)
     train_data=dataset['train']['data']
     train_lable=dataset['train']['lable']
     batches=dataset['train']['batches']
@@ -116,7 +117,7 @@ def train(args):
         if epoch % 500 == 0:
             print(f"epoch-{epoch}, time-{datetime.now() - start_time}, "
                   f"loss-{totalloss / len(batches)}")  # replace batch_num with len(bathces)
-            test(args, epoch)
+            # test(args, epoch)
         if epoch % 5000 == 0 and epoch > 0:
             now = datetime.now()
             torch.save(

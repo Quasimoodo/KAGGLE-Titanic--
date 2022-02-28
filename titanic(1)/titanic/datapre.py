@@ -17,15 +17,15 @@ def read_data(path):
     titanic_data = pd.read_csv(path)
     titanic_lable = titanic_data['Survived']
     titanic_data = titanic_data[USED_REP]
-    titanic_data.drop(titanic_data[np.isnan(titanic_data['Age'])].index, inplace=True)
-    titanic_data.drop(titanic_data[np.isnan(titanic_data['Fare'])].index, inplace=True)
+    titanic_data['Age'].fillna(30, inplace=True)
+    titanic_data['Fare'].fillna(0, inplace=True)
+    titanic_data['Embarked'].fillna('S', inplace=True)
     # 直接drop对应indx即可删除该行
 
     titanic_data.replace({
         'Sex': {'male': 0, 'female': 1},
         'Embarked': {'C': 0, 'Q': 1, 'S': 2}
     }, inplace=True)
-    titanic_data.drop(titanic_data[np.isnan(titanic_data['Embarked'])].index, inplace=True)
 
     #normalize
     age_ary = np.array(titanic_data['Age'])
